@@ -1,2 +1,72 @@
-# Proyecto_Curie
-Proyecto profesional del satelite Curie
+# Proyecto Curie: Análisis de Poblaciones de Pingüinos 🐧
+
+## 📋 Descripción del Proyecto
+Este proyecto consiste en un Análisis Exploratorio de Datos (EDA) sobre el dataset *Palmer Penguins*, realizado para la **Organización de Investigación Biográfica Polar**.
+
+---
+## 🎯 Objetivos del Proyecto
+El presente análisis tiene como misión transformar los datos brutos en un informe exploratorio claro que permita realizar toma de decisiones científicas. Nuestro objetivo es identificar patrones morfológicos entre especies y evaluar la calidad de las campañas de toma de datos.
+
+
+### 🐧 1. Caracterización Biológica y Morfológica
+1.1 **Identificar patrones:** \
+ Determinar las diferencias físicas clave que definen a las especies Adélie, Chinstrap y Gentoo.\
+1.2 **Mapeo de poblaciones:** \
+Analizar la distribución geográfica de estas especies en las islas Biscoe, Dream y Torgersen.
+
+### 📈 2. Control de Calidad y Sesgos
+2.1 **Diagnóstico de integridad:**\
+Evaluar la calidad del dataset, identificando registros incompletos o erróneos.\
+2.2 **Detección de sesgos o  "outliers":**\
+Analizar si el muestreo ha sido equilibrado entre islas y sexos, identificando limitaciones que puedan condicionar las conclusiones científicas.
+
+### ✅ 3. Optimización de Campañas Futuras
+3.1 **Selección de variables:**\
+Determinar qué mediciones son más representativas para identificar perfiles biológicos.
+
+3.2 **Guía de recomendaciones:**\
+Entregar una guía con acciones concretas para minimizar errores en la toma de datos y mejorar la trazabilidad de las muestras.
+
+---
+
+## 👥 Equipo (Proyecto Curie)
+- **Nombre del Equipo:** Equipo 1
+- **Integrantes:**
+* [Alain](https://github.com/Alain-coder1) (Coordinación y Git Master)
+* [Ágata](https://github.com/AgataSzlufcik) (Ingeniería de Datos)
+* [Cheyenne](https://github.com/cheyennecg) (Ingeniería de Datos)
+* [Franciscco](https://github.com/FranDiazBusto) (Ingeniería de Datos)
+* [Carolina](https://github.com/KrolinaTF) (Ingeniería de Datos)
+* [Lucía P.]() (Ingeniería de Datos)
+
+---
+
+## 🚀 Evolución y Estado del Proyecto
+*Dcoumentación de la evolución diaria del proyecto.*
+
+- [x] **Fase 1: Organización y planificación de tareas.**\
+ Creación del [repositorio](https://github.com/Alain-coder1/Proyecto_Curie) del proyecto, designación de roles dentro del equipo, planificación del proyecto mediante GitHub Projects (Kanban), y definición de tareas principales (Backlog).
+- [ ] **Fase 2: Preparación del entorno.**\
+Creación del entorno virtual `.venv` y carga de [datos brutos](penguins_raw.csv).
+- [ ] **Fase 3: Diagnóstico inicial.**
+- [ ] **Fase 4: Limpieza con Criterio.** 
+- [ ] **Fase 5: Análisis y Visualización.**
+- [ ] **Fase 6: Conclusiones.**
+
+---
+
+## 🛠️ Stack Tecnológico
+- **Lenguaje:** Python 3.11 | 3.12
+- **Librerías principales:** Pandas, Seaborn, Matplotlib, YData-Profilling.
+- **Gestión:** GitHub Projects (Kanban) y Git.
+
+---
+
+## 🔧 Instalación y Uso
+
+
+🔗 Enlaces de Interés
+
+* [Tablero de Gestión - Proyecto Curie](https://github.com/users/Alain-coder1/projects/2)
+
+* [Dataset Original](penguins_raw.csv)
