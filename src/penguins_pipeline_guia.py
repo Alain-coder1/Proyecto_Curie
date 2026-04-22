@@ -33,7 +33,6 @@ def load_data(path: str) -> pd.DataFrame:
 
     # Simplificar nombre de especie a la primera palabra (ej: "Adelie Penguin" -> "Adelie")
     df['Species'] = df['Species'].str.split().str[0]
-
     # Imputacion de nulos numericos con la mediana de cada especie
     cols_num = [
         'Culmen Length (mm)', 'Culmen Depth (mm)',

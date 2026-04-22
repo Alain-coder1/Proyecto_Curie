@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import seaborn as sns
+import os
 import matplotlib.pyplot as plt
 from src.penguins_pipeline_guia import load_data, apply_filters, compute_kpis
 
@@ -26,27 +27,88 @@ def set_background(image_path: str):
     """
     st.markdown(css, unsafe_allow_html=True)
 
-def set_sidebar_background(image_path: str):          # imagen de la barra lateral
+def set_sidebar_background(image_path: str):  # barra lateral
+    import base64
     with open(image_path, "rb") as f:
         encoded = base64.b64encode(f.read()).decode()
+
     css = f"""
     <style>
+
+    /* Fondo sidebar */
     [data-testid="stSidebar"] {{
         background-image: url("data:image/jpeg;base64,{encoded}");
         background-size: cover;
         background-position: center bottom;
         background-repeat: no-repeat;
     }}
-    [data-testid="stSidebar"] * {{
+
+    /* ❌ EVITA ESTO GLOBAL (rompe estilos) */
+    /* [data-testid="stSidebar"] * {{
         color: white !important;
+    }} */
+
+    /* 🟦 CHIPS seleccionados */
+    [data-testid="stSidebar"] span[data-baseweb="tag"] {{
+        background-color: #87CEEB !important;
+        color: black !important;
+        border-radius: 6px;
     }}
-    [data-testid="stSidebar"] .stMultiSelect > div {{
+
+    /* 🔤 LABELS (Especie, Isla, Sexo) */
+    [data-testid="stSidebar"] label {{
+        color: black !important;
+        font-weight:500;
+    }}
+
+    /* Caja multiselect */
+    [data-testid="stSidebar"] div[data-baseweb="select"] > div {{
         background-color: rgba(255, 255, 255, 0.15);
         border-radius: 8px;
     }}
+
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+
+/* Tabs base */
+.stTabs [role="tab"] {
+    background-color: rgba(30, 40, 60, 0.85);
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 1rem;
+    color: #E8EAF6 !important;
+    border: 1px solid rgba(135, 206, 250, 0.2);
+}
+
+/* Hover */
+.stTabs [role="tab"]:hover {
+    background-color: rgba(135, 206, 250, 0.2);
+}
+
+/* 🔥 TAB ACTIVA (sobrescribe rojo) */
+.stTabs [role="tab"][aria-selected="true"] {
+    background-color: rgba(135, 206, 250, 0.35) !important;
+    color: black !important;
+    border: 1px solid #87CEFA !important;
+    border-bottom: none !important;   /* 👈 quita rojo */
+}
+
+/* 🔥 ESTA ES LA CLAVE REAL */
+.stTabs [data-baseweb="tab-highlight"] {
+    background-color: transparent !important;
+}
+
+/* eliminar línea roja completamente */
+.stTabs [role="tab"][aria-selected="true"]::after {
+    display: none !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # ── Configuración ──────────────────────────────────────────
 
@@ -79,8 +141,32 @@ def cargar_datos():
 df = cargar_datos()
 
 # ── Título ──────────────────────────────────────────────────
-st.title("🐧 Dashboard - Palmer Penguins")
-st.markdown("Análisis exploratorio de las tres especies del archipiélago Palmer.")
+# Primero carga la imagen FUERA del markdown
+ruta_foto = os.path.join("assets", "minipingui.png")
+with open(ruta_foto, "rb") as f:
+    foto_titulo = base64.b64encode(f.read()).decode()
+
+# Luego construye todo el HTML junto en un solo markdown
+st.markdown(f"""
+<div style='
+    background: rgba(255, 255, 255, 0.06);
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(135, 206, 250, 0.25);
+    backdrop-filter: blur(6px);
+    margin: 0 auto 10px auto;
+    width: fit-content;
+    text-align: center;
+'>
+    <h1 style='margin:0; font-size:3rem; color:#E8EAF6; display:flex; align-items:center; gap:15px;'>
+        <img src='data:image/png;base64,{foto_titulo}' style='height:90px; border-radius:8px;'>
+        Dashboard - Palmer Penguins - Equipo 1
+    </h1>
+    <p style='margin: 2px 0 0 0; font-size: 1rem; color: #aaaaaa;'>
+        Análisis exploratorio de las tres especies del archipiélago Palmer.
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
 # ── Filtros en la barra lateral ───────────────────────────────────
 st.sidebar.header("Filtros")
@@ -101,7 +187,7 @@ df_filtrado = df[
     df['Sex'].isin(sexos)
 ]
 
-st.markdown(f"**{len(df_filtrado)} registros** seleccionados")
+st.sidebar.markdown(f"📊 {len(df_filtrado)} registros")
 
 
 # kpis
@@ -111,11 +197,17 @@ kpis = compute_kpis(df_filtrado)
 st.markdown("### 📊 Resumen de la selección")
 col1, col2, col3, col4, col5, col6 = st.columns(6)
 
-col1.metric(
-    label="🐧 Registros",
-    value=kpis["total_registros"],
-    delta=f"{kpis['total_registros'] - len(df)} vs total",
-)
+col1.markdown(f"""
+    <div data-testid="stMetric">
+        <p style="font-size:14px; margin:0; color:white;">🐧 Registros</p>
+        <p style="font-size:28px; font-weight:bold; margin:0; color:white;">
+            {kpis["total_registros"]} 
+            <span style="font-size:14px; margin-left:16px; color:white;">
+                {kpis['total_registros'] - len(df)} vs total
+            </span>
+        </p>
+    </div>
+""", unsafe_allow_html=True)
 col2.metric(
     label="🔬 Especies",
     value=kpis["num_especies"],
@@ -139,6 +231,41 @@ col6.metric(
 
 st.markdown("---")
 
+st.markdown("""
+<style>
+
+/* KPI CARD */
+[data-testid="stMetric"] {
+    background: rgba(255, 255, 255, 0.08);  /* fondo suave */
+    border-radius: 14px;
+    padding: 12px;
+    border: 1px solid rgba(135, 206, 250, 0.3);  /* azul cielo */
+    backdrop-filter: blur(8px);
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.3);
+}
+
+/* VALOR KPI */
+[data-testid="stMetricValue"] {
+    color: white !important;  /* blanco */
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+/* LABEL KPI */
+[data-testid="stMetricLabel"] {
+    color: #cccccc !important;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+
+/* DELTA */
+[data-testid="stMetricDelta"] {
+    color: #4ECDC4 !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 # ── Tabs ────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4 = st.tabs(["Vista Datos", "Univariado", "Bivariado", "Panel Final"])
 
@@ -146,6 +273,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["Vista Datos", "Univariado", "Bivariado", "Pan
 with tab1:
     st.subheader("Vista de datos")
     st.dataframe(df_filtrado, use_container_width=True)
+
 
 # TAB 2 — Univariado
 with tab2:
@@ -190,7 +318,7 @@ with tab3:
 
 # TAB 4 — Panel Final (tus 4 visualizaciones)
 with tab4:
-    fig, axes = plt.subplots(2, 2, figsize=(10, 7))
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
     sns.histplot(data=df_filtrado, x="Flipper Length (mm)",
                  hue="Species", kde=True, ax=axes[0, 0])
     axes[0, 0].set_title('Distribución de tamaño de aleta por especie')
