@@ -79,11 +79,16 @@ def apply_filters(
 
 
 def compute_kpis(df: pd.DataFrame) -> dict:
+    sex_counts = df["Sex"].value_counts(normalize=True) * 100
+    
     return {
         "total_registros": int(len(df)),
         "num_especies":    int(df["Species"].nunique()) if "Species" in df.columns else 0,
         "num_islas":       int(df["Island"].nunique())  if "Island"  in df.columns else 0,
         "masa_media":      round(df["Body Mass (g)"].mean(), 1) if "Body Mass (g)" in df.columns else 0,
         "aleta_media":     round(df["Flipper Length (mm)"].mean(), 1) if "Flipper Length (mm)" in df.columns else 0,
-        "pct_machos":      round((df["Sex"] == "MALE").sum() / len(df) * 100, 1) if "Sex" in df.columns else 0,
-    }
+        "pct_male": round(sex_counts.get("MALE", 0), 1),
+        "pct_female": round(sex_counts.get("FEMALE", 0), 1),
+        "pct_unknown": round(sex_counts.get("UNKNOWN", 0), 1)
+        }
+    

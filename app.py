@@ -1,9 +1,16 @@
 import streamlit as st
 import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
 import seaborn as sns
 import os
 import matplotlib.pyplot as plt
 from src.penguins_pipeline_guia import load_data, apply_filters, compute_kpis
+import folium
+from streamlit_folium import st_folium
+from PIL import Image
+import numpy as np
+
+
 
 # fondo dashboard
 
@@ -140,6 +147,21 @@ def cargar_datos():
 
 df = cargar_datos()
 
+#--- NUEVA SECCIÓN: LÓGICA DE MACHINE LEARNING ---
+@st.cache_resource # Usamos cache_resource para objetos complejos como modelos
+def entrenar_modelo(data):
+    # Seleccionamos las columnas numéricas para el entrenamiento
+    X = data[['Culmen Length (mm)', 'Culmen Depth (mm)', 'Flipper Length (mm)', 'Body Mass (g)']]
+    y = data['Species']
+
+#Creamos y entrenamos el Bosque Aleatorio
+    clf = RandomForestClassifier(n_estimators=100, random_state=42)
+    clf.fit(X, y)
+    return clf
+
+#Entrenamos el modelo con los datos base
+modelo_ia = entrenar_modelo(df)
+
 # ── Título ──────────────────────────────────────────────────
 # Primero carga la imagen FUERA del markdown
 ruta_foto = os.path.join("assets", "minipingui.png")
@@ -194,8 +216,8 @@ st.sidebar.markdown(f"📊 {len(df_filtrado)} registros")
 
 kpis = compute_kpis(df_filtrado)
 
-st.markdown("### 📊 Resumen de la selección")
-col1, col2, col3, col4, col5, col6 = st.columns(6)
+st.markdown("### 💻 Resumen de la selección")
+col1, col2, col3, col4, col5, col6 = st.columns([1,1,1,1,1,1.5])
 
 col1.markdown(f"""
     <div data-testid="stMetric">
@@ -208,6 +230,7 @@ col1.markdown(f"""
         </p>
     </div>
 """, unsafe_allow_html=True)
+
 col2.metric(
     label="🔬 Especies",
     value=kpis["num_especies"],
@@ -225,9 +248,10 @@ col5.metric(
     value=f"{kpis['aleta_media']} mm",
 )
 col6.metric(
-    label="♂️ % Machos",
-    value=f"{kpis['pct_machos']} %",
+    label="👥 Sexo",
+    value=f"{kpis['pct_male']}% ♂ | {kpis['pct_female']}% ♀"
 )
+
 
 st.markdown("---")
 
@@ -267,16 +291,76 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── Tabs ────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4 = st.tabs(["Vista Datos", "Univariado", "Bivariado", "Panel Final"])
+# ── Estilos botones ────────────────────────────────────────
+st.markdown("""
+<style>
+button[kind="secondary"] {
+    background: rgba(15, 23, 42, 0.55) !important;
+    color: #E8EAF6 !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    backdrop-filter: blur(6px);
+    padding: 10px 18px !important;
+    transition: all 0.2s ease;
+}
+button[kind="secondary"]:hover {
+    background: rgba(30, 41, 59, 0.7) !important;
+}
+button[kind="primary"] {
+    background: rgba(96, 165, 250, 0.35) !important;
+    border: 1px solid #60A5FA !important;
+    color: white !important;
+}
+div[data-testid="column"] {
+    padding: 0px 4px !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
-# TAB 1 - Vista Datos
-with tab1:
+# ── Estado inicial ─────────────────────────────────────────
+if "view" not in st.session_state:
+    st.session_state.view = None
+
+def toggle_view(v):
+    if st.session_state.view == v:
+        st.session_state.view = None
+    else:
+        st.session_state.view = v
+
+# ── Botones ────────────────────────────────────────────────
+c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
+
+with c1:
+    st.button("🔎 Vista Datos", on_click=toggle_view, args=("Vista Datos",),
+        type="primary" if st.session_state.view == "Vista Datos" else "secondary", use_container_width=True)
+with c2:
+    st.button("📈 Univariado", on_click=toggle_view, args=("Univariado",),
+        type="primary" if st.session_state.view == "Univariado" else "secondary", use_container_width=True)
+with c3:
+    st.button("📊 Bivariado", on_click=toggle_view, args=("Bivariado",),
+        type="primary" if st.session_state.view == "Bivariado" else "secondary", use_container_width=True)
+with c4:
+    st.button("🏁 Panel Final", on_click=toggle_view, args=("Panel Final",),
+        type="primary" if st.session_state.view == "Panel Final" else "secondary", use_container_width=True)
+with c5:
+    st.button("🔮 Predicción IA", on_click=toggle_view, args=("Predicción IA",),
+        type="primary" if st.session_state.view == "Predicción IA" else "secondary", use_container_width=True)
+with c6:
+    st.button("🗺️ Archipiélago", on_click=toggle_view, args=("Archipiélago",),
+        type="primary" if st.session_state.view == "Archipiélago" else "secondary", use_container_width=True)
+with c7:
+    st.button("📝 Hallazgos", on_click=toggle_view, args=("Hallazgos",),
+        type="primary" if st.session_state.view == "Hallazgos" else "secondary", use_container_width=True)
+
+view = st.session_state.view
+
+# ── Vistas ─────────────────────────────────────────────────
+
+if view == "Vista Datos":
     st.subheader("Vista de datos")
     st.dataframe(df_filtrado, use_container_width=True)
 
-
-# TAB 2 — Univariado
-with tab2:
+elif view == "Univariado":
     variable = st.selectbox("Variable numérica", [
         'Culmen Length (mm)', 'Culmen Depth (mm)',
         'Flipper Length (mm)', 'Body Mass (g)'
@@ -293,51 +377,181 @@ with tab2:
     plt.tight_layout()
     st.pyplot(fig)
 
-# TAB 3 — Bivariado
-with tab3:
+elif view == "Bivariado":
     opcion = st.select_slider(
         "Selecciona el gráfico",
         options=["Longitud vs Profundidad del pico", "Masa corporal por especie y sexo"]
     )
-
     fig, ax = plt.subplots(figsize=(8, 5))
-
     if opcion == "Longitud vs Profundidad del pico":
         sns.scatterplot(data=df_filtrado,
                         x='Culmen Length (mm)', y='Culmen Depth (mm)',
                         hue='Species', ax=ax)
         ax.set_title('Longitud vs Profundidad del pico')
-
     else:
         sns.boxplot(data=df_filtrado, x='Species', y='Body Mass (g)',
                     hue='Sex', palette='Set2', ax=ax)
         ax.set_title('Masa corporal por especie y sexo')
         plt.tight_layout()
-
     st.pyplot(fig)
 
-# TAB 4 — Panel Final (tus 4 visualizaciones)
-with tab4:
+elif view == "Panel Final":
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
     sns.histplot(data=df_filtrado, x="Flipper Length (mm)",
                  hue="Species", kde=True, ax=axes[0, 0])
     axes[0, 0].set_title('Distribución de tamaño de aleta por especie')
-
     sns.boxplot(data=df_filtrado, x='Species', y='Body Mass (g)',
                 hue='Sex', palette='Set2', ax=axes[0, 1])
     axes[0, 1].set_title('Masa corporal por especie y sexo')
-
     sns.scatterplot(data=df_filtrado, x='Culmen Length (mm)',
                     y='Culmen Depth (mm)', hue='Species', ax=axes[1, 0])
     axes[1, 0].set_title('Longitud vs profundidad del pico')
-
     counts = df_filtrado['Species'].value_counts()
     axes[1, 1].pie(counts.values, labels=counts.index,
                    autopct='%1.1f%%',
                    colors=sns.color_palette("pastel", len(counts)))
     axes[1, 1].set_title('Distribución de ejemplares por especie')
-
     plt.tight_layout()
     st.pyplot(fig)
 
+elif view == "Predicción IA":
+    st.header("🔮 Identificador de Especies Inteligente")
+    st.write("Ajusta las medidas para ver la predicción en tiempo real:")
+    c1, c2 = st.columns(2)
+    with c1:
+        val_culmen_l = st.slider("Longitud del pico (mm)", 30.0, 60.0, 44.0)
+        val_culmen_d = st.slider("Profundidad del pico (mm)", 13.0, 22.0, 17.0)
+    with c2:
+        val_flipper = st.slider("Longitud de la aleta (mm)", 170.0, 240.0, 200.0)
+        val_mass = st.slider("Masa corporal (g)", 2500.0, 6500.0, 4200.0)
+
+    input_data = pd.DataFrame([[val_culmen_l, val_culmen_d, val_flipper, val_mass]],
+                              columns=['Culmen Length (mm)', 'Culmen Depth (mm)',
+                                       'Flipper Length (mm)', 'Body Mass (g)'])
+    pred = modelo_ia.predict(input_data)[0]
+    prob = modelo_ia.predict_proba(input_data)
+    confianza = max(prob[0]) * 100
+
+    if confianza <= 25:
+        color_gradiente = "linear-gradient(90deg, #8b0000, #ff4b2b)"
+        color_borde = "#ff4b2b"
+    elif confianza <= 50:
+        color_gradiente = "linear-gradient(90deg, #f37335, #fdc830)"
+        color_borde = "#f37335"
+    elif confianza <= 75:
+        color_gradiente = "linear-gradient(90deg, #add100, #7b920a)"
+        color_borde = "#add100"
+    else:
+        color_gradiente = "linear-gradient(90deg, #11998e, #38ef7d)"
+        color_borde = "#38ef7d"
+
+    st.markdown(f"""
+        <div style="
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(2px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            margin-bottom: 25px;
+            text-align: center;
+        ">
+            <h3 style="color: white; margin-bottom: 5px;">Especie Identificada</h3>
+            <h1 style="color: #87CEFA; margin-top: 0; font-size: 3rem;">🐧 {pred}</h1>
+            <div style="
+                background: {color_gradiente};
+                height: 30px; width: 100%;
+                border-radius: 15px; margin-top: 15px;
+                display: flex; align-items: center; justify-content: center;
+                border: 1px solid {color_borde};
+            ">
+                <span style="color: white; font-weight: bold;">
+                    Confianza: {confianza:.2f}%
+                </span>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+elif view == "Archipiélago":
+    st.header("🗺️ Islas del Archipiélago Palmer")
+    islas_coords = {
+        "Torgersen": {"lat": -64.7667, "lon": -64.0833,
+                      "especies": "Adelie", "color": "red"},
+        "Biscoe":    {"lat": -64.8038, "lon": -63.8326,
+                      "especies": "Adelie, Gentoo", "color": "blue"},
+        "Dream":     {"lat": -64.7333, "lon": -64.2333,
+                      "especies": "Adelie, Chinstrap", "color": "orange"},
+    }
+    m = folium.Map(location=[-64.77, -64.10], zoom_start=10)
+    for isla, datos in islas_coords.items():
+        folium.Marker(
+            location=[datos["lat"], datos["lon"]],
+            popup=f"<b>{isla}</b><br>Especies: {datos['especies']}",
+            tooltip=f"🏝️ {isla} — Especies: {datos['especies']}",
+            icon=folium.Icon(color=datos["color"], icon="info-sign")
+        ).add_to(m)
+    st_folium(m, use_container_width=True, height=500)
+
+elif view == "Hallazgos":
+
+    st.header("📝 Hallazgos Principales del Análisis")
+
+    # 🔹 BLOQUE CON FONDO SOLO PARA TEXTO
+    st.markdown("""
+    <div style="
+        background: rgba(30, 41, 59, 0.40);
+        padding: 25px;
+        border-radius: 16px;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0px 8px 25px rgba(0,0,0,0.3);
+        margin-top: 10px;
+        color: #E8EAF6;
+    ">
+
+    <h3>1. Diferenciación por Especie</h3>
+    <p>La especie <b>Gentoo</b> es significativamente más grande en términos de masa corporal y longitud de aleta en comparación con Adélie y Chinstrap.</p>
+
+    <h3>2. El Pico como Identificador (Culmen)</h3>
+    <p>La relación entre la longitud y profundidad del pico es el mejor predictor visual para separar a Adélie de Chinstrap.</p>
+
+    <h3>3. Dimorfismo Sexual</h3>
+    <p>Los machos presentan medidas superiores a las hembras, confirmando dimorfismo sexual.</p>
+
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 🔹 IMAGEN FUERA (SIN FONDO)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.image(
+        "assets/resupingui.png",
+        caption="Resumen visual: Hallazgos y Conclusiones finales",
+        use_container_width=True
+    )
+#── Footer ─────────────────────────────────────────────────
+st.markdown("""
+<style>
+
+/* Footer fijo */
+.footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    color: #cccccc;
+    text-align: center;
+    padding: 8px;
+    font-size: 0.8rem;
+    border-top: 1px solid rgba(135, 206, 250, 0.2);
+    backdrop-filter: blur(6px);
+}
+
+</style>
+
+<div class="footer">
+🐧 © 2026 Alain · Lucia P. · Cheyenne · Agata · Fran D. · Carolina
+</div>
+""", unsafe_allow_html=True)
 
