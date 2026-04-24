@@ -9,12 +9,19 @@ import folium
 from streamlit_folium import st_folium
 from PIL import Image
 import numpy as np
-
-
-
-# fondo dashboard
-
 import base64
+import plotly.express as px
+
+
+# ── Carga del CSS externo ───────────────────────────────────
+
+def load_css(path: str):
+    with open(path, "r") as f:
+        css = f.read()
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+
+
+# ── Fondos con imagen (requieren base64, se mantienen en Python) ──
 
 def set_background(image_path: str):
     with open(image_path, "rb") as f:
@@ -24,110 +31,35 @@ def set_background(image_path: str):
     .stApp {{
         background-image: url("data:image/png;base64,{encoded}");
         background-size: cover;
-        background-position: center bottom;  /* muestra los pingüinos */
+        background-position: center bottom;
         background-repeat: no-repeat;
         background-attachment: fixed;
     }}
-    
-    
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
 
-def set_sidebar_background(image_path: str):  # barra lateral
-    import base64
+
+def set_sidebar_background(image_path: str):
     with open(image_path, "rb") as f:
         encoded = base64.b64encode(f.read()).decode()
-
     css = f"""
     <style>
-
-    /* Fondo sidebar */
     [data-testid="stSidebar"] {{
         background-image: url("data:image/jpeg;base64,{encoded}");
         background-size: cover;
         background-position: center bottom;
         background-repeat: no-repeat;
     }}
-
-    /* ❌ EVITA ESTO GLOBAL (rompe estilos) */
-    /* [data-testid="stSidebar"] * {{
-        color: white !important;
-    }} */
-
-    /* 🟦 CHIPS seleccionados */
-    [data-testid="stSidebar"] span[data-baseweb="tag"] {{
-        background-color: #87CEEB !important;
-        color: black !important;
-        border-radius: 6px;
-    }}
-
-    /* 🔤 LABELS (Especie, Isla, Sexo) */
-    [data-testid="stSidebar"] label {{
-        color: black !important;
-        font-weight:500;
-    }}
-
-    /* Caja multiselect */
-    [data-testid="stSidebar"] div[data-baseweb="select"] > div {{
-        background-color: rgba(255, 255, 255, 0.15);
-        border-radius: 8px;
-    }}
-
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
 
-st.markdown("""
-<style>
 
-/* Tabs base */
-.stTabs [role="tab"] {
-    background-color: rgba(30, 40, 60, 0.85);
-    border-radius: 10px;
-    padding: 8px 16px;
-    font-size: 1rem;
-    color: #E8EAF6 !important;
-    border: 1px solid rgba(135, 206, 250, 0.2);
-}
-
-/* Hover */
-.stTabs [role="tab"]:hover {
-    background-color: rgba(135, 206, 250, 0.2);
-}
-
-/* 🔥 TAB ACTIVA (sobrescribe rojo) */
-.stTabs [role="tab"][aria-selected="true"] {
-    background-color: rgba(135, 206, 250, 0.35) !important;
-    color: black !important;
-    border: 1px solid #87CEFA !important;
-    border-bottom: none !important;   /* 👈 quita rojo */
-}
-
-/* 🔥 ESTA ES LA CLAVE REAL */
-.stTabs [data-baseweb="tab-highlight"] {
-    background-color: transparent !important;
-}
-
-/* eliminar línea roja completamente */
-.stTabs [role="tab"][aria-selected="true"]::after {
-    display: none !important;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ── Configuración ──────────────────────────────────────────
-
-st.set_page_config(page_title="Penguins Dashboard", layout="wide")
-set_background("assets/dark_pingu.png")
-set_sidebar_background("assets/sidebarpingu.jpeg")  # barra lateral
-
-# ___ Configuracuón estilos gráficos ________________________
+# ── Estilos gráficos ────────────────────────────────────────
 
 def style_matplotlib(fig, axes):
     BG = (30/255, 41/255, 59/255, 0.55)
-
     fig.patch.set_facecolor(BG)
 
     if not isinstance(axes, (list, tuple)):
@@ -135,30 +67,28 @@ def style_matplotlib(fig, axes):
 
     for ax in axes:
         ax.set_facecolor(BG)
-
         ax.grid(True, linestyle='--', alpha=0.15)
-
         for spine in ax.spines.values():
             spine.set_visible(False)
-
         ax.tick_params(colors="#E5E7EB")
         ax.xaxis.label.set_color("#E8EAF6")
         ax.yaxis.label.set_color("#F1F5F9")
         ax.title.set_color("#F1F5F9")
 
-import plotly.express as px
 
 PLOTLY_BG = 'rgba(30, 41, 59, 0.55)'
 
-def style_plotly(fig):
+def style_plotly(fig, height=450):
     fig.update_layout(
         paper_bgcolor=PLOTLY_BG,
         plot_bgcolor=PLOTLY_BG,
         font=dict(color="#E8EAF6"),
         legend=dict(bgcolor='rgba(0,0,0,0)'),
-        margin=dict(l=20, r=20, t=40, b=20)
+        margin=dict(l=20, r=20, t=40, b=20),
+        height=height
     )
     return fig
+
 
 PALETA = {
     "Adelie": "#60A5FA",
@@ -167,7 +97,17 @@ PALETA = {
 }
 
 
-# ── Carga y limpieza (igual que en tu notebook) ─────────────
+# ── Configuración de página ─────────────────────────────────
+
+st.set_page_config(page_title="Penguins Dashboard", layout="wide")
+
+load_css("style.css")
+set_background("assets/dark_pingu.png")
+set_sidebar_background("assets/sidebarpingu.jpeg")
+
+
+# ── Carga y limpieza de datos ───────────────────────────────
+
 @st.cache_data
 def cargar_datos():
     df = pd.read_csv('data/penguins_raw.csv')
@@ -177,7 +117,6 @@ def cargar_datos():
     df_limpio = df[columnas].copy()
     df_limpio['Species'] = df_limpio['Species'].str.split().str[0]
 
-    # Imputación por mediana por especie
     cols_num = ['Culmen Length (mm)', 'Culmen Depth (mm)',
                 'Flipper Length (mm)', 'Body Mass (g)']
     for especie in df_limpio['Species'].unique():
@@ -190,28 +129,26 @@ def cargar_datos():
 
 df = cargar_datos()
 
-#--- NUEVA SECCIÓN: LÓGICA DE MACHINE LEARNING ---
-@st.cache_resource # Usamos cache_resource para objetos complejos como modelos
+
+# ── Modelo de Machine Learning ──────────────────────────────
+
+@st.cache_resource
 def entrenar_modelo(data):
-    # Seleccionamos las columnas numéricas para el entrenamiento
     X = data[['Culmen Length (mm)', 'Culmen Depth (mm)', 'Flipper Length (mm)', 'Body Mass (g)']]
     y = data['Species']
-
-#Creamos y entrenamos el Bosque Aleatorio
     clf = RandomForestClassifier(n_estimators=100, random_state=42)
     clf.fit(X, y)
     return clf
 
-#Entrenamos el modelo con los datos base
 modelo_ia = entrenar_modelo(df)
 
+
 # ── Título ──────────────────────────────────────────────────
-# Primero carga la imagen FUERA del markdown
+
 ruta_foto = os.path.join("assets", "minipingui.png")
 with open(ruta_foto, "rb") as f:
     foto_titulo = base64.b64encode(f.read()).decode()
 
-# Luego construye todo el HTML junto en un solo markdown
 st.markdown(f"""
 <div style='
     background: rgba(255, 255, 255, 0.06);
@@ -233,7 +170,9 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Filtros en la barra lateral ───────────────────────────────────
+
+# ── Filtros en la barra lateral ─────────────────────────────
+
 st.sidebar.header("Filtros")
 
 especies = st.sidebar.multiselect(
@@ -255,7 +194,7 @@ df_filtrado = df[
 st.sidebar.markdown(f"📊 {len(df_filtrado)} registros")
 
 
-# kpis
+# ── KPIs ────────────────────────────────────────────────────
 
 kpis = compute_kpis(df_filtrado)
 
@@ -266,7 +205,7 @@ col1.markdown(f"""
     <div data-testid="stMetric">
         <p style="font-size:14px; margin:0; color:white;">🐧 Registros</p>
         <p style="font-size:28px; font-weight:bold; margin:0; color:white;">
-            {kpis["total_registros"]} 
+            {kpis["total_registros"]}
             <span style="font-size:14px; margin-left:16px; color:white;">
                 {kpis['total_registros'] - len(df)} vs total
             </span>
@@ -274,93 +213,17 @@ col1.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-col2.metric(
-    label="🔬 Especies",
-    value=kpis["num_especies"],
-)
-col3.metric(
-    label="🏝️ Islas",
-    value=kpis["num_islas"],
-)
-col4.metric(
-    label="⚖️ Masa media",
-    value=f"{kpis['masa_media']} g",
-)
-col5.metric(
-    label="🪶 Aleta media",
-    value=f"{kpis['aleta_media']} mm",
-)
-col6.metric(
-    label="👥 Sexo",
-    value=f"{kpis['pct_male']}% ♂ | {kpis['pct_female']}% ♀"
-)
-
+col2.metric(label="🔬 Especies",  value=kpis["num_especies"])
+col3.metric(label="🏝️ Islas",     value=kpis["num_islas"])
+col4.metric(label="⚖️ Masa media", value=f"{kpis['masa_media']} g")
+col5.metric(label="🪶 Aleta media", value=f"{kpis['aleta_media']} mm")
+col6.metric(label="👥 Sexo",       value=f"{kpis['pct_male']}% ♂ | {kpis['pct_female']}% ♀")
 
 st.markdown("---")
 
-st.markdown("""
-<style>
 
-/* KPI CARD */
-[data-testid="stMetric"] {
-    background: rgba(255, 255, 255, 0.08);  /* fondo suave */
-    border-radius: 14px;
-    padding: 12px;
-    border: 1px solid rgba(135, 206, 250, 0.3);  /* azul cielo */
-    backdrop-filter: blur(8px);
-    box-shadow: 0px 4px 12px rgba(0,0,0,0.3);
-}
+# ── Botones de navegación ───────────────────────────────────
 
-/* VALOR KPI */
-[data-testid="stMetricValue"] {
-    color: white !important;  /* blanco */
-    font-size: 1.8rem;
-    font-weight: bold;
-}
-
-/* LABEL KPI */
-[data-testid="stMetricLabel"] {
-    color: white !important;
-    font-size: 0.8rem;
-    letter-spacing: 0.5px;
-}
-
-/* DELTA */
-[data-testid="stMetricDelta"] {
-    color: #4ECDC4 !important;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ── Tabs ────────────────────────────────────────────────────
-# ── Estilos botones ────────────────────────────────────────
-st.markdown("""
-<style>
-button[kind="secondary"] {
-    background: rgba(15, 23, 42, 0.55) !important;
-    color: #E8EAF6 !important;
-    border-radius: 12px !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
-    backdrop-filter: blur(6px);
-    padding: 10px 18px !important;
-    transition: all 0.2s ease;
-}
-button[kind="secondary"]:hover {
-    background: rgba(30, 41, 59, 0.7) !important;
-}
-button[kind="primary"] {
-    background: rgba(96, 165, 250, 0.35) !important;
-    border: 1px solid #60A5FA !important;
-    color: white !important;
-}
-div[data-testid="column"] {
-    padding: 0px 4px !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ── Estado inicial ─────────────────────────────────────────
 if "view" not in st.session_state:
     st.session_state.view = None
 
@@ -370,7 +233,6 @@ def toggle_view(v):
     else:
         st.session_state.view = v
 
-# ── Botones ────────────────────────────────────────────────
 c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
 
 with c1:
@@ -397,13 +259,13 @@ with c7:
 
 view = st.session_state.view
 
-# ── Vistas ─────────────────────────────────────────────────
+
+# ── Vistas ──────────────────────────────────────────────────
 
 if view == "Vista Datos":
     st.subheader("Vista de datos")
     st.dataframe(df_filtrado, use_container_width=True)
 
-# TAB 2 — Univariado
 elif view == "Univariado":
 
     variable = st.selectbox("Variable numérica", [
@@ -413,176 +275,87 @@ elif view == "Univariado":
 
     col1, col2 = st.columns(2)
 
-    # ─────────────────────────────
-    # 📦 BOXPLOT (PLOTLY)
-    # ─────────────────────────────
     with col1:
-        fig = px.box(
-            df_filtrado,
-            y=variable,
-            color='Species',
-            color_discrete_map=PALETA
-        )
+        fig = px.box(df_filtrado, y=variable, color='Species', color_discrete_map=PALETA)
+        fig.update_layout(title="Boxplot")
+        st.plotly_chart(style_plotly(fig, height=640), use_container_width=True)
 
-        fig.update_layout(
-            title="Boxplot",
-            height=640,
-            paper_bgcolor='rgba(30, 41, 59, 0.55)',
-            plot_bgcolor='rgba(30, 41, 59, 0.55)',
-            font=dict(color="#E8EAF6")
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-
-    # ─────────────────────────────
-    # 📊 HISTOGRAMA (SEABORN → COMO TU IMAGEN)
-    # ─────────────────────────────
     with col2:
         fig, ax = plt.subplots(figsize=(6, 4))
-
         sns.histplot(
-            data=df_filtrado,
-            x=variable,
-            hue="Species",
-            bins=20,
-            kde=True,
-            palette=PALETA,
-            edgecolor="black",
-            alpha=0.4,
-            ax=ax
+            data=df_filtrado, x=variable, hue="Species",
+            bins=20, kde=True, palette=PALETA,
+            edgecolor="black", alpha=0.4, ax=ax
         )
-
         ax.set_title("Distribución")
-
         style_matplotlib(fig, ax)
-
         st.pyplot(fig)
 
-    
-# TAB 3 — Bivariado
 elif view == "Bivariado":
 
     col1, col2 = st.columns(2)
 
-    # 🔵 SCATTER
     with col1:
         fig = px.scatter(
             df_filtrado,
-            x='Culmen Length (mm)',
-            y='Culmen Depth (mm)',
-            color='Species',
-            color_discrete_map=PALETA
+            x='Culmen Length (mm)', y='Culmen Depth (mm)',
+            color='Species', color_discrete_map=PALETA
         )
         fig.update_layout(title="Longitud vs Profundidad")
         st.plotly_chart(style_plotly(fig), use_container_width=True)
 
-    # 📦 BOXPLOT
     with col2:
         fig = px.box(
             df_filtrado,
-            x='Species',
-            y='Body Mass (g)',
-            color='Sex',
-            color_discrete_sequence=px.colors.qualitative.Set2
+            x='Species', y='Body Mass (g)',
+            color='Sex', color_discrete_sequence=px.colors.qualitative.Set2
         )
         fig.update_layout(title="Masa corporal por especie y sexo")
         st.plotly_chart(style_plotly(fig), use_container_width=True)
 
-# TAB 4 — Panel Final (tus 4 visualizaciones)
 elif view == "Panel Final":
 
     col1, col2 = st.columns(2)
     col3, col4 = st.columns(2)
 
-    # ─────────────────────────────
-    # 📊 HISTOGRAMA (SEABORN PRO)
-    # ─────────────────────────────
     with col1:
-        fig, ax = plt.subplots(figsize=(6,4))
-
+        fig, ax = plt.subplots(figsize=(6, 4))
         sns.histplot(
-            data=df_filtrado,
-            x="Flipper Length (mm)",
-            hue="Species",
-            bins=20,
-            kde=True,
-            palette=PALETA,
-            edgecolor="black",
-            alpha=0.4,
-            ax=ax
+            data=df_filtrado, x="Flipper Length (mm)", hue="Species",
+            bins=20, kde=True, palette=PALETA,
+            edgecolor="black", alpha=0.4, ax=ax
         )
-
         ax.set_title("Distribución de aletas")
-
         style_matplotlib(fig, ax)
-
         st.pyplot(fig)
 
-    # ─────────────────────────────
-    # 📦 BOXPLOT (PLOTLY)
-    # ─────────────────────────────
     with col2:
         fig = px.box(
             df_filtrado,
-            x='Species',
-            y='Body Mass (g)',
-            color='Sex',
-            color_discrete_sequence=px.colors.qualitative.Set2
+            x='Species', y='Body Mass (g)',
+            color='Sex', color_discrete_sequence=px.colors.qualitative.Set2
         )
+        fig.update_layout(title="Masa corporal")
+        st.plotly_chart(style_plotly(fig, height=640), use_container_width=True)
 
-        fig.update_layout(
-            title="Masa corporal",
-            height=640,
-            paper_bgcolor='rgba(30, 41, 59, 0.55)',
-            plot_bgcolor='rgba(30, 41, 59, 0.55)',
-            font=dict(color="#E8EAF6")
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    # ─────────────────────────────
-    # 🔵 SCATTER (PLOTLY)
-    # ─────────────────────────────
     with col3:
         fig = px.scatter(
             df_filtrado,
-            x='Culmen Length (mm)',
-            y='Culmen Depth (mm)',
-            color='Species',
-            color_discrete_map=PALETA
+            x='Culmen Length (mm)', y='Culmen Depth (mm)',
+            color='Species', color_discrete_map=PALETA
         )
+        fig.update_layout(title="Relación del pico")
+        st.plotly_chart(style_plotly(fig), use_container_width=True)
 
-        fig.update_layout(
-            title="Relación del pico",
-            paper_bgcolor='rgba(30, 41, 59, 0.55)',
-            plot_bgcolor='rgba(30, 41, 59, 0.55)',
-            font=dict(color="#E8EAF6")
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    # ─────────────────────────────
-    # 🥧 PIE (PLOTLY)
-    # ─────────────────────────────
     with col4:
         counts = df_filtrado['Species'].value_counts().reset_index()
         counts.columns = ['Species', 'count']
-
         fig = px.pie(
-            counts,
-            names='Species',
-            values='count',
-            color='Species',
-            color_discrete_map=PALETA
+            counts, names='Species', values='count',
+            color='Species', color_discrete_map=PALETA
         )
-
-        fig.update_layout(
-            title="Distribución de especies",
-            paper_bgcolor='rgba(30, 41, 59, 0.55)',
-            font=dict(color="#E8EAF6")
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(title="Distribución de especies")
+        st.plotly_chart(style_plotly(fig), use_container_width=True)
 
 elif view == "Predicción IA":
     st.header("🔮 Identificador de Especies Inteligente")
@@ -645,12 +418,9 @@ elif view == "Predicción IA":
 elif view == "Archipiélago":
     st.header("🗺️ Islas del Archipiélago Palmer")
     islas_coords = {
-        "Torgersen": {"lat": -64.7667, "lon": -64.0833,
-                      "especies": "Adelie", "color": "red"},
-        "Biscoe":    {"lat": -64.8038, "lon": -63.8326,
-                      "especies": "Adelie, Gentoo", "color": "blue"},
-        "Dream":     {"lat": -64.7333, "lon": -64.2333,
-                      "especies": "Adelie, Chinstrap", "color": "orange"},
+        "Torgersen": {"lat": -64.7667, "lon": -64.0833, "especies": "Adelie",           "color": "red"},
+        "Biscoe":    {"lat": -64.8038, "lon": -63.8326, "especies": "Adelie, Gentoo",    "color": "blue"},
+        "Dream":     {"lat": -64.7333, "lon": -64.2333, "especies": "Adelie, Chinstrap", "color": "orange"},
     }
     m = folium.Map(location=[-64.77, -64.10], zoom_start=10)
     for isla, datos in islas_coords.items():
@@ -729,7 +499,6 @@ elif view == "Hallazgos":
 
     for h in hallazgos:
         abierto = st.session_state.hallazgo_abierto == h["key"]
-
         st.button(
             f"{'▼' if abierto else '▶'}  {h['titulo']}",
             key=f"btn_{h['key']}",
@@ -737,7 +506,6 @@ elif view == "Hallazgos":
             args=(h["key"],),
             use_container_width=True,
         )
-
         if abierto:
             st.markdown(
                 f"""<div style="
@@ -760,27 +528,11 @@ elif view == "Hallazgos":
         caption="Resumen visual: Hallazgos y Conclusiones finales",
         use_container_width=True
     )
-#── Footer ─────────────────────────────────────────────────
+
+
+# ── Footer ──────────────────────────────────────────────────
+
 st.markdown("""
-<style>
-
-/* Footer fijo */
-.footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: rgba(255, 255, 255, 0.05);
-    color: #cccccc;
-    text-align: center;
-    padding: 8px;
-    font-size: 0.8rem;
-    border-top: 1px solid rgba(135, 206, 250, 0.2);
-    backdrop-filter: blur(6px);
-}
-
-</style>
-
 <div class="footer">
 🐧 © 2026 Alain · Lucia P. · Cheyenne · Agata · Fran D. · Carolina
 </div>
