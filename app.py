@@ -123,6 +123,49 @@ st.set_page_config(page_title="Penguins Dashboard", layout="wide")
 set_background("assets/dark_pingu.png")
 set_sidebar_background("assets/sidebarpingu.jpeg")  # barra lateral
 
+# ___ Configuracuón estilos gráficos ________________________
+
+def style_matplotlib(fig, axes):
+    BG = (30/255, 41/255, 59/255, 0.55)
+
+    fig.patch.set_facecolor(BG)
+
+    if not isinstance(axes, (list, tuple)):
+        axes = [axes]
+
+    for ax in axes:
+        ax.set_facecolor(BG)
+
+        ax.grid(True, linestyle='--', alpha=0.15)
+
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        ax.tick_params(colors="#E5E7EB")
+        ax.xaxis.label.set_color("#E8EAF6")
+        ax.yaxis.label.set_color("#F1F5F9")
+        ax.title.set_color("#F1F5F9")
+
+import plotly.express as px
+
+PLOTLY_BG = 'rgba(30, 41, 59, 0.55)'
+
+def style_plotly(fig):
+    fig.update_layout(
+        paper_bgcolor=PLOTLY_BG,
+        plot_bgcolor=PLOTLY_BG,
+        font=dict(color="#E8EAF6"),
+        legend=dict(bgcolor='rgba(0,0,0,0)'),
+        margin=dict(l=20, r=20, t=40, b=20)
+    )
+    return fig
+
+PALETA = {
+    "Adelie": "#60A5FA",
+    "Chinstrap": "#F59E0B",
+    "Gentoo": "#34D399"
+}
+
 
 # ── Carga y limpieza (igual que en tu notebook) ─────────────
 @st.cache_data
@@ -277,7 +320,7 @@ st.markdown("""
 
 /* LABEL KPI */
 [data-testid="stMetricLabel"] {
-    color: #cccccc !important;
+    color: white !important;
     font-size: 0.8rem;
     letter-spacing: 0.5px;
 }
@@ -349,7 +392,7 @@ with c6:
     st.button("🗺️ Archipiélago", on_click=toggle_view, args=("Archipiélago",),
         type="primary" if st.session_state.view == "Archipiélago" else "secondary", use_container_width=True)
 with c7:
-    st.button("🥇 Hallazgos", on_click=toggle_view, args=("Hallazgos",),
+    st.button("📝 Hallazgos", on_click=toggle_view, args=("Hallazgos",),
         type="primary" if st.session_state.view == "Hallazgos" else "secondary", use_container_width=True)
 
 view = st.session_state.view
@@ -360,59 +403,186 @@ if view == "Vista Datos":
     st.subheader("Vista de datos")
     st.dataframe(df_filtrado, use_container_width=True)
 
+# TAB 2 — Univariado
 elif view == "Univariado":
+
     variable = st.selectbox("Variable numérica", [
         'Culmen Length (mm)', 'Culmen Depth (mm)',
         'Flipper Length (mm)', 'Body Mass (g)'
     ])
-    fig, ax = plt.subplots(1, 3, figsize=(13, 4), sharex=True)
-    sns.boxplot(data=df_filtrado[variable], ax=ax[0], orient='h', width=0.4)
-    sns.histplot(data=df_filtrado[variable], ax=ax[1], kde=False)
-    ax[1].set_ylabel('Frecuencia')
-    sns.kdeplot(data=df_filtrado[variable], ax=ax[2], fill=True)
-    ax[2].set_ylabel('Densidad')
-    for a in ax:
-        a.set_xlabel(variable)
-    fig.suptitle(f'Análisis Univariado — {variable}')
-    plt.tight_layout()
-    st.pyplot(fig)
 
+    col1, col2 = st.columns(2)
+
+    # ─────────────────────────────
+    # 📦 BOXPLOT (PLOTLY)
+    # ─────────────────────────────
+    with col1:
+        fig = px.box(
+            df_filtrado,
+            y=variable,
+            color='Species',
+            color_discrete_map=PALETA
+        )
+
+        fig.update_layout(
+            title="Boxplot",
+            height=640,
+            paper_bgcolor='rgba(30, 41, 59, 0.55)',
+            plot_bgcolor='rgba(30, 41, 59, 0.55)',
+            font=dict(color="#E8EAF6")
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+
+    # ─────────────────────────────
+    # 📊 HISTOGRAMA (SEABORN → COMO TU IMAGEN)
+    # ─────────────────────────────
+    with col2:
+        fig, ax = plt.subplots(figsize=(6, 4))
+
+        sns.histplot(
+            data=df_filtrado,
+            x=variable,
+            hue="Species",
+            bins=20,
+            kde=True,
+            palette=PALETA,
+            edgecolor="black",
+            alpha=0.4,
+            ax=ax
+        )
+
+        ax.set_title("Distribución")
+
+        style_matplotlib(fig, ax)
+
+        st.pyplot(fig)
+
+    
+# TAB 3 — Bivariado
 elif view == "Bivariado":
-    opcion = st.select_slider(
-        "Selecciona el gráfico",
-        options=["Longitud vs Profundidad del pico", "Masa corporal por especie y sexo"]
-    )
-    fig, ax = plt.subplots(figsize=(8, 5))
-    if opcion == "Longitud vs Profundidad del pico":
-        sns.scatterplot(data=df_filtrado,
-                        x='Culmen Length (mm)', y='Culmen Depth (mm)',
-                        hue='Species', ax=ax)
-        ax.set_title('Longitud vs Profundidad del pico')
-    else:
-        sns.boxplot(data=df_filtrado, x='Species', y='Body Mass (g)',
-                    hue='Sex', palette='Set2', ax=ax)
-        ax.set_title('Masa corporal por especie y sexo')
-        plt.tight_layout()
-    st.pyplot(fig)
 
+    col1, col2 = st.columns(2)
+
+    # 🔵 SCATTER
+    with col1:
+        fig = px.scatter(
+            df_filtrado,
+            x='Culmen Length (mm)',
+            y='Culmen Depth (mm)',
+            color='Species',
+            color_discrete_map=PALETA
+        )
+        fig.update_layout(title="Longitud vs Profundidad")
+        st.plotly_chart(style_plotly(fig), use_container_width=True)
+
+    # 📦 BOXPLOT
+    with col2:
+        fig = px.box(
+            df_filtrado,
+            x='Species',
+            y='Body Mass (g)',
+            color='Sex',
+            color_discrete_sequence=px.colors.qualitative.Set2
+        )
+        fig.update_layout(title="Masa corporal por especie y sexo")
+        st.plotly_chart(style_plotly(fig), use_container_width=True)
+
+# TAB 4 — Panel Final (tus 4 visualizaciones)
 elif view == "Panel Final":
-    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-    sns.histplot(data=df_filtrado, x="Flipper Length (mm)",
-                 hue="Species", kde=True, ax=axes[0, 0])
-    axes[0, 0].set_title('Distribución de tamaño de aleta por especie')
-    sns.boxplot(data=df_filtrado, x='Species', y='Body Mass (g)',
-                hue='Sex', palette='Set2', ax=axes[0, 1])
-    axes[0, 1].set_title('Masa corporal por especie y sexo')
-    sns.scatterplot(data=df_filtrado, x='Culmen Length (mm)',
-                    y='Culmen Depth (mm)', hue='Species', ax=axes[1, 0])
-    axes[1, 0].set_title('Longitud vs profundidad del pico')
-    counts = df_filtrado['Species'].value_counts()
-    axes[1, 1].pie(counts.values, labels=counts.index,
-                   autopct='%1.1f%%',
-                   colors=sns.color_palette("pastel", len(counts)))
-    axes[1, 1].set_title('Distribución de ejemplares por especie')
-    plt.tight_layout()
-    st.pyplot(fig)
+
+    col1, col2 = st.columns(2)
+    col3, col4 = st.columns(2)
+
+    # ─────────────────────────────
+    # 📊 HISTOGRAMA (SEABORN PRO)
+    # ─────────────────────────────
+    with col1:
+        fig, ax = plt.subplots(figsize=(6,4))
+
+        sns.histplot(
+            data=df_filtrado,
+            x="Flipper Length (mm)",
+            hue="Species",
+            bins=20,
+            kde=True,
+            palette=PALETA,
+            edgecolor="black",
+            alpha=0.4,
+            ax=ax
+        )
+
+        ax.set_title("Distribución de aletas")
+
+        style_matplotlib(fig, ax)
+
+        st.pyplot(fig)
+
+    # ─────────────────────────────
+    # 📦 BOXPLOT (PLOTLY)
+    # ─────────────────────────────
+    with col2:
+        fig = px.box(
+            df_filtrado,
+            x='Species',
+            y='Body Mass (g)',
+            color='Sex',
+            color_discrete_sequence=px.colors.qualitative.Set2
+        )
+
+        fig.update_layout(
+            title="Masa corporal",
+            height=640,
+            paper_bgcolor='rgba(30, 41, 59, 0.55)',
+            plot_bgcolor='rgba(30, 41, 59, 0.55)',
+            font=dict(color="#E8EAF6")
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    # ─────────────────────────────
+    # 🔵 SCATTER (PLOTLY)
+    # ─────────────────────────────
+    with col3:
+        fig = px.scatter(
+            df_filtrado,
+            x='Culmen Length (mm)',
+            y='Culmen Depth (mm)',
+            color='Species',
+            color_discrete_map=PALETA
+        )
+
+        fig.update_layout(
+            title="Relación del pico",
+            paper_bgcolor='rgba(30, 41, 59, 0.55)',
+            plot_bgcolor='rgba(30, 41, 59, 0.55)',
+            font=dict(color="#E8EAF6")
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    # ─────────────────────────────
+    # 🥧 PIE (PLOTLY)
+    # ─────────────────────────────
+    with col4:
+        counts = df_filtrado['Species'].value_counts().reset_index()
+        counts.columns = ['Species', 'count']
+
+        fig = px.pie(
+            counts,
+            names='Species',
+            values='count',
+            color='Species',
+            color_discrete_map=PALETA
+        )
+
+        fig.update_layout(
+            title="Distribución de especies",
+            paper_bgcolor='rgba(30, 41, 59, 0.55)',
+            font=dict(color="#E8EAF6")
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
 
 elif view == "Predicción IA":
     st.header("🔮 Identificador de Especies Inteligente")
@@ -615,4 +785,3 @@ st.markdown("""
 🐧 © 2026 Alain · Lucia P. · Cheyenne · Agata · Fran D. · Carolina
 </div>
 """, unsafe_allow_html=True)
-
