@@ -349,7 +349,7 @@ with c6:
     st.button("🗺️ Archipiélago", on_click=toggle_view, args=("Archipiélago",),
         type="primary" if st.session_state.view == "Archipiélago" else "secondary", use_container_width=True)
 with c7:
-    st.button("📝 Hallazgos", on_click=toggle_view, args=("Hallazgos",),
+    st.button("🥇 Hallazgos", on_click=toggle_view, args=("Hallazgos",),
         type="primary" if st.session_state.view == "Hallazgos" else "secondary", use_container_width=True)
 
 view = st.session_state.view
@@ -493,37 +493,98 @@ elif view == "Archipiélago":
     st_folium(m, use_container_width=True, height=500)
 
 elif view == "Hallazgos":
+    st.header("🏆 Hallazgos Principales del Análisis")
 
-    st.header("📝 Hallazgos Principales del Análisis")
+    if "hallazgo_abierto" not in st.session_state:
+        st.session_state.hallazgo_abierto = None
 
-    # 🔹 BLOQUE CON FONDO SOLO PARA TEXTO
-    st.markdown("""
-    <div style="
-        background: rgba(30, 41, 59, 0.40);
-        padding: 25px;
-        border-radius: 16px;
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255,255,255,0.08);
-        box-shadow: 0px 8px 25px rgba(0,0,0,0.3);
-        margin-top: 10px;
-        color: #E8EAF6;
-    ">
+    def toggle_hallazgo(h):
+        if st.session_state.hallazgo_abierto == h:
+            st.session_state.hallazgo_abierto = None
+        else:
+            st.session_state.hallazgo_abierto = h
 
-    <h3>1. Diferenciación por Especie</h3>
-    <p>La especie <b>Gentoo</b> es significativamente más grande en términos de masa corporal y longitud de aleta en comparación con Adélie y Chinstrap.</p>
+    hallazgos = [
+        {
+            "key": "distribucion_isla",
+            "titulo": "1. Patrón de Distribución por Isla",
+            "texto": """
+                <b>Evidencia observada:</b> La especie Adelie aparece en las 3 islas, pero Gentoo y Chinstrap solamente aparecen en una de ellas, Biscoe y Dream, respectivamente.<br><br>
+                <b>Interpretación:</b> Hay un desequilibrio de distribución en los datos recolectados. No podemos determinar si este desequilibrio se debe a la metodología del muestreo o a la distribución real de especies en cada isla.<br><br>
+                <b>Implicación para el cliente:</b> No se pueden realizar comparaciones bivariadas entre especies dentro de la Isla Torgersen (solo hay Adelie).<br><br>
+                <b>Recomendación:</b> En la próxima campaña, documentar cómo se realizó el muestreo, si se realiza de forma aleatoria o si se hace una preselección por especie.
+            """
+        },
+        {
+            "key": "dimorfismo",
+            "titulo": "2. Dimorfismo Sexual en la Masa Corporal",
+            "texto": """
+                <b>Evidencia observada:</b> En todas las categorías cruzadas, la media de masa de los machos es superior a la de las hembras.<br><br>
+                <b>Interpretación:</b> El sexo es un factor de variabilidad constante en el peso, independientemente de la especie.<br><br>
+                <b>Implicación para el cliente:</b> Un análisis de peso que no segregue por sexo dará una visión distorsionada (bimodal) de la realidad.<br><br>
+                <b>Recomendación:</b> Asegurar la identificación del sexo en el 100% de los individuos capturados para no invalidar las comparaciones de masa.
+            """
+        },
+        {
+            "key": "pico",
+            "titulo": "3. Patrón de Forma del Pico",
+            "texto": """
+                <b>Evidencia observada:</b> Los Adelie tienen picos cortos y anchos, los Chinstrap tienen picos largos pero también anchos (más equilibrados), y los Gentoo tienen picos largos pero más estrechos.<br><br>
+                <b>Interpretación:</b> La relación largo/ancho del pico es el único factor que permite distinguir a los Adelie de los Chinstrap, que por lo demás son muy similares en peso y tamaño de aletas.<br><br>
+                <b>Implicación para el cliente:</b> Para distinguir estas dos especies "pequeñas", se requiere obligatoriamente la medida del culmen.<br><br>
+                <b>Recomendación:</b> En futuras campañas, tratar de reducir el número de datos nulos en Culmen Depth, ya que es el único diferenciador para el 50% de las especies del dataset.
+            """
+        },
+        {
+            "key": "adelie",
+            "titulo": "4. Distribución de la Especie Adelie",
+            "texto": """
+                <b>Evidencia observada:</b> La especie Adelie es la única con registros en las tres islas, representando aproximadamente el 44% del total de observaciones.<br><br>
+                <b>Interpretación:</b> Es la especie con mayor presencia y distribución geográfica en los datos recolectados.<br><br>
+                <b>Implicación para el cliente:</b> Los datos de Adelie son los más robustos para realizar comparaciones transversales entre islas.<br><br>
+                <b>Recomendación:</b> Utilizar a la población de Adelie como grupo de control o referencia para comparar las condiciones de las tres islas, ya que es la única constante en el dataset.
+            """
+        },
+        {
+            "key": "calidad",
+            "titulo": "5. Calidad del Muestreo (Valores Faltantes)",
+            "texto": """
+                <b>Evidencia observada:</b> Las variables morfológicas tienen muy pocos nulos (2 casos por cada variable), pero el sexo tiene más (11 casos).<br><br>
+                <b>Interpretación:</b> Las medidas físicas son más fáciles de obtener o registrar que la determinación del sexo.<br><br>
+                <b>Implicación para el cliente:</b> La base de datos es muy confiable para análisis morfológico, pero menos para análisis demográficos por sexo.<br><br>
+                <b>Recomendación:</b> Revisar el protocolo de sexado en campo o incluir pruebas genéticas si los datos de sexo son críticos para el futuro del proyecto.
+            """
+        },
+    ]
 
-    <h3>2. El Pico como Identificador (Culmen)</h3>
-    <p>La relación entre la longitud y profundidad del pico es el mejor predictor visual para separar a Adélie de Chinstrap.</p>
+    for h in hallazgos:
+        abierto = st.session_state.hallazgo_abierto == h["key"]
 
-    <h3>3. Dimorfismo Sexual</h3>
-    <p>Los machos presentan medidas superiores a las hembras, confirmando dimorfismo sexual.</p>
+        st.button(
+            f"{'▼' if abierto else '▶'}  {h['titulo']}",
+            key=f"btn_{h['key']}",
+            on_click=toggle_hallazgo,
+            args=(h["key"],),
+            use_container_width=True,
+        )
 
-    </div>
-    """, unsafe_allow_html=True)
+        if abierto:
+            st.markdown(
+                f"""<div style="
+                    background: rgba(30, 41, 59, 0.40);
+                    padding: 16px 20px;
+                    border-radius: 10px;
+                    border-left: 3px solid #87CEEB;
+                    backdrop-filter: blur(8px);
+                    border-top: 1px solid rgba(255,255,255,0.08);
+                    box-shadow: 0px 8px 25px rgba(0,0,0,0.3);
+                    color: #E8EAF6;
+                    margin-bottom: 8px;
+                ">{h['texto']}</div>""",
+                unsafe_allow_html=True
+            )
 
-    # 🔹 IMAGEN FUERA (SIN FONDO)
     st.markdown("<br>", unsafe_allow_html=True)
-
     st.image(
         "assets/resupingui.png",
         caption="Resumen visual: Hallazgos y Conclusiones finales",
