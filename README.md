@@ -44,6 +44,8 @@ Entregar una guía con acciones concretas para minimizar errores en la toma de d
 
 🔗 Enlaces de Interés
 
+* [Deployment streamlit](https://proyectocuriegit-m9ugvtupdwxatzmtwxamw4.streamlit.app/)
+
 * [Evolución y estado del proyecto](https://github.com/Alain-coder1/Proyecto_Curie/wiki)
 
 * [Tablero de Gestión - Proyecto Curie](https://github.com/users/Alain-coder1/projects/2)
