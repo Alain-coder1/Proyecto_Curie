@@ -37,35 +37,14 @@ Entregar una guía con acciones concretas para minimizar errores en la toma de d
 * [Cheyenne](https://github.com/cheyennecg) (Ingeniería de Datos)
 * [Franciscco](https://github.com/FranDiazBusto) (Ingeniería de Datos)
 * [Carolina](https://github.com/KrolinaTF) (Ingeniería de Datos)
-* [Lucía P.]() (Ingeniería de Datos)
+* [Lucía P.](https://github.com/lucypelaez) (Ingeniería de Datos)
 
 ---
-
-## 🚀 Evolución y Estado del Proyecto
-*Dcoumentación de la evolución diaria del proyecto.*
-
-- [x] **Fase 1: Organización y planificación de tareas.**\
- Creación del [repositorio](https://github.com/Alain-coder1/Proyecto_Curie) del proyecto, designación de roles dentro del equipo, planificación del proyecto mediante GitHub Projects (Kanban), y definición de tareas principales (Backlog).
-- [ ] **Fase 2: Preparación del entorno.**\
-Creación del entorno virtual `.venv` y carga de [datos brutos](penguins_raw.csv).
-- [ ] **Fase 3: Diagnóstico inicial.**
-- [ ] **Fase 4: Limpieza con Criterio.** 
-- [ ] **Fase 5: Análisis y Visualización.**
-- [ ] **Fase 6: Conclusiones.**
-
----
-
-## 🛠️ Stack Tecnológico
-- **Lenguaje:** Python 3.11 | 3.12
-- **Librerías principales:** Pandas, Seaborn, Matplotlib, YData-Profilling.
-- **Gestión:** GitHub Projects (Kanban) y Git.
-
----
-
-## 🔧 Instalación y Uso
 
 
 🔗 Enlaces de Interés
+
+* [Evolución y estado del proyecto](https://github.com/Alain-coder1/Proyecto_Curie/wiki)
 
 * [Tablero de Gestión - Proyecto Curie](https://github.com/users/Alain-coder1/projects/2)
 
