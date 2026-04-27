@@ -50,4 +50,4 @@ Entregar una guía con acciones concretas para minimizar errores en la toma de d
 
 * [Tablero de Gestión - Proyecto Curie](https://github.com/users/Alain-coder1/projects/2)
 
-* [Dataset Original](penguins_raw.csv)
+* [Dataset Original](data/penguins_raw.csv)
